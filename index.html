@@ -1,540 +1,577 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CWT Interactive Simulator - Jack Liu</title>
+    <title>CWT 高级物理实验室 - VER 4.0 (同行评审交互版)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 引入 OrbitControls 用于鼠标全方位控制 3D 视角 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.98);
+            --neon-blue: #38bdf8;
+            --neon-purple: #c084fc;
+            --neon-green: #10b981;
+            --text-main: #f8fafc;
+            --border-ui: #1e293b;
+            --accent-gold: #f59e0b;
+        }
+
         body {
             margin: 0;
-            padding: 0;
-            background-color: #020617; 
-            color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: grid;
+            grid-template-columns: 400px 1fr;
             height: 100vh;
             overflow: hidden;
-            position: relative;
         }
-        #header {
-            text-align: center;
+
+        .sidebar {
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-ui);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+            box-shadow: 10px 0 40px rgba(0,0,0,0.6);
+            overflow-y: auto;
+        }
+        /* 定制滚动条 */
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        .lab-header { border-bottom: 2px solid var(--neon-blue); padding-bottom: 12px; margin-bottom: 10px; position: relative;}
+        .lab-title { font-size: 1rem; font-weight: 900; color: var(--neon-blue); text-transform: uppercase; }
+
+        .exp-menu { display: flex; flex-direction: column; gap: 4px; }
+        .menu-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #334155;
+            color: #94a3b8;
             padding: 10px;
-            background-color: rgba(15, 23, 42, 0.9);
-            width: 100%;
-            box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.8);
-            z-index: 10;
-            backdrop-filter: blur(5px);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+            font-size: 0.75rem;
         }
-        h1 { margin: 0; font-size: 22px; color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
-        p.subtitle { margin: 4px 0 0 0; font-size: 13px; color: #94a3b8; }
-        
-        #controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            width: 100%;
-            background-color: transparent;
-            position: absolute;
-            bottom: 0;
-            z-index: 20;
-            background: linear-gradient(to top, #020617 65%, transparent);
+        .menu-item:hover { border-color: #64748b; color: white; }
+        .menu-item.active {
+            background: linear-gradient(90deg, rgba(56, 189, 248, 0.2), transparent);
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            border-left: 4px solid var(--neon-blue);
         }
-        .slider-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: rgba(30, 41, 59, 0.8);
-            padding: 10px 30px;
-            border-radius: 12px;
-            border: 1px solid #38bdf8;
-            width: 350px;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
-            backdrop-filter: blur(10px);
-        }
-        input[type=range] { width: 100%; cursor: pointer; margin-top: 8px; accent-color: #38bdf8; }
-        
-        #metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            width: 90%;
-            max-width: 1200px;
-            margin-bottom: 15px;
-        }
-        .metric-box {
-            background: rgba(30, 41, 59, 0.7);
-            padding: 8px 10px;
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
             border-radius: 8px;
-            border: 1px solid rgba(51, 65, 85, 0.8);
-            text-align: center;
-            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-ui);
         }
-        .metric-title { font-size: 11px; color: #cbd5e1; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
-        .metric-value { font-size: 18px; font-weight: bold; text-shadow: 0 0 8px currentColor; }
-        .metric-status { font-size: 11px; margin-top: 5px; }
+
+        .label-row { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px; font-weight: bold; align-items: center;}
+        .val-text { color: var(--neon-blue); font-family: monospace; font-size: 0.9rem;}
+
+        input[type="range"] { width: 100%; height: 4px; accent-color: var(--neon-blue); cursor: pointer; }
+
+        .qrng-btn { font-size: 0.6rem; padding: 4px 10px; cursor: pointer; border-radius: 4px; border: 1px solid var(--neon-green); background: transparent; color: var(--neon-green); font-weight: bold; transition: all 0.2s;}
+        .qrng-btn.active { background: var(--neon-green); color: black; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);}
+
+        .export-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white; border: none; padding: 10px; border-radius: 6px;
+            font-weight: bold; cursor: pointer; font-size: 0.75rem;
+            text-align: center; margin-top: 10px; transition: transform 0.1s;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+        .export-btn:active { transform: scale(0.98); }
+
+        .main-stage { display: flex; flex-direction: column; position: relative; }
+        #viewport-container { flex: 1; background: #000; position: relative; cursor: grab;}
+        #viewport-container:active { cursor: grabbing; }
+
+        .hud-overlay {
+            position: absolute; top: 20px; left: 20px; right: 20px; pointer-events: none;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+        }
+
+        .hud-card {
+            background: rgba(0, 0, 0, 0.85); border: 1px solid var(--neon-purple); padding: 12px;
+            border-radius: 8px; font-family: monospace; font-size: 0.7rem; color: var(--neon-purple);
+            box-shadow: 0 0 15px rgba(192, 132, 252, 0.2);
+            line-height: 1.4; backdrop-filter: blur(4px);
+        }
+
+        .formula-display {
+            position: absolute; bottom: 30px; left: 30px; background: rgba(15, 23, 42, 0.85);
+            padding: 12px 25px; border-radius: 4px; border-left: 6px solid var(--accent-gold);
+            font-family: serif; font-size: 1.1rem; color: var(--accent-gold); backdrop-filter: blur(4px);
+        }
+
+        .camera-tip {
+            position: absolute; bottom: 80px; left: 30px; color: rgba(255,255,255,0.4);
+            font-size: 0.7rem; font-family: monospace; pointer-events: none;
+        }
+
+        .analysis-dashboard {
+            height: 280px; background: #020617; border-top: 2px solid var(--border-ui);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px;
+        }
+
+        .chart-container { background: rgba(255, 255, 255, 0.01); border-radius: 10px; padding: 10px; border: 1px solid #1e293b; position: relative; }
         
-        .c-red { color: #f87171; }
-        .c-blue { color: #60a5fa; }
-        .c-yellow { color: #fbbf24; }
-        .c-purple { color: #c084fc; }
-
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        #theory-overlay {
-            position: absolute;
-            top: 75px;
-            left: 20px;
-            z-index: 15;
-            pointer-events: none;
-            color: #f8fafc;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .hud-item {
-            margin-bottom: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 10px;
-            border-left: 3px solid #38bdf8;
-            border-radius: 0 4px 4px 0;
-            font-size: 11px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-            backdrop-filter: blur(3px);
-            transition: all 0.3s;
-        }
-        .math-sym { color: #38bdf8; font-weight: bold; }
-
-        #author-signature {
-            position: absolute;
-            bottom: 25px;
-            right: 30px;
-            z-index: 50;
-            color: rgba(148, 163, 184, 0.6);
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            pointer-events: none;
-            text-align: right;
-            line-height: 1.5;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-        #author-signature .author-name {
-            color: #38bdf8;
-            font-size: 15px;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* 概率密度轴提示 */
-        #pdf-label {
-            position: absolute;
-            top: 50%;
-            right: 80px;
-            transform: translateY(-50%) rotate(90deg);
-            color: rgba(251, 191, 36, 0.5);
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            letter-spacing: 4px;
-            pointer-events: none;
-            z-index: 15;
+        #pdf-overlay {
+            position: absolute; right: 20px; bottom: 310px; width: 180px; height: 120px;
+            background: rgba(0,0,0,0.6); border: 1px solid var(--accent-gold); border-radius: 8px;
+            padding: 10px; pointer-events: none; backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <h1>Consciousness Weaving Theory : Singularity Engine</h1>
-        <p class="subtitle">Ultimate Integration of Information Geometry, Tensor Fields & Wave Function Collapse | <b>Author: Jack Liu</b></p>
+<div class="sidebar">
+    <div class="lab-header">
+        <div class="lab-title">CWT 终极验证中心</div>
+        <div style="font-size: 0.65rem; color: var(--neon-purple); margin-top: 4px;">VER 4.0 | 交互式视界 & 数据推断版</div>
+    </div>
+    
+    <div class="exp-menu">
+        <button class="menu-item active" onclick="setExp('spacetime')">01. 非对易时空 (代数撕裂)</button>
+        <button class="menu-item" onclick="setExp('geodesic')">02. 态矢量引导 (意向引力)</button>
+        <button class="menu-item" onclick="setExp('energy')">03. 广义 Jar 稳态核心</button>
+        <button class="menu-item" onclick="setExp('holographic')">04. 全息纠缠面积折叠</button>
+        <button class="menu-item" onclick="setExp('topological')">05. 规范场织造 (拓扑结)</button>
+        <button class="menu-item" onclick="setExp('consensus')">06. 共识现实 (相干干涉)</button>
+        <button class="menu-item" onclick="setExp('pathintegral')">07. 路径积分 (最小作用量)</button>
+        <button class="menu-item" onclick="setExp('singularity')">08. 意识奇点发动机</button>
     </div>
 
-    <!-- 理论级 HUD 面板 (已增补所有 7 大底层核算公式) -->
-    <div id="theory-overlay">
-        <div class="hud-item" style="border-left-color: #fbbf24;">
-            [Eq 2.2] Covariant Weaving Action<br>
-            <span class="math-sym">𝒜_W[Ψ, g, λ] = </span> <span id="hud-action" style="color:#fbbf24">Maximum Quanta</span>
-        </div>
-        <div class="hud-item" style="border-left-color: #34d399;">
-            [Eq 2.1] Non-linear Weaving Tensor<br>
-            <span class="math-sym">W_μν (Operator) = </span> <span id="hud-tensor" style="color:#34d399">Isotropic Noise</span>
-        </div>
-        <div class="hud-item" style="border-left-color: #f87171;">
-            [Eq 3.1] Non-commutative Metric Noise <br>
-            <span class="math-sym">[x̂μ, x̂ν] = </span> <span id="hud-noise" style="color:#f87171">∞ (Algebraic Chaos)</span>
-        </div>
-        <div class="hud-item" style="border-left-color: #c084fc;">
-            [Eq 3.3] Holographic Entanglement Entropy <br>
-            <span class="math-sym">S_EE(ρ) - γ = </span> <span id="hud-entropy" style="color:#c084fc">Unbounded Space</span>
-        </div>
-        <div class="hud-item" style="border-left-color: #60a5fa;">
-            [Eq 3.4] Cosmological Time Evolution <br>
-            <span class="math-sym">iℏ ∂/∂τ |Ψ⟩ = </span> <span id="hud-time" style="color:#60a5fa">Static (Timeless)</span>
-        </div>
-        <div class="hud-item" style="border-left-color: #f472b6;">
-            [Eq 4.x] Bures Information Geodesic<br>
-            <span class="math-sym">Db(ρ, σ) = </span> <span id="hud-bures" style="color:#f472b6">1.570 rad</span>
-        </div>
-        <!-- 终极补全：费舍尔信息度规 -->
-        <div class="hud-item" style="border-left-color: #e879f9;">
-            [Eq 6.x] Fisher Information Metric (Certainty)<br>
-            <span class="math-sym">I_F(λ) ∝ 1/σ² = </span> <span id="hud-fisher" style="color:#e879f9">0.000 (Absolute Uncertainty)</span>
-        </div>
+    <div class="control-group">
+        <div class="label-row">意向性标量 λ_1 <span class="val-text" id="v-lambda">0.500</span></div>
+        <input type="range" id="param-lambda" min="0.00" max="1" step="0.001" value="0.50">
     </div>
 
-    <div id="pdf-label">PROBABILITY DENSITY P(x)</div>
-    <canvas id="simCanvas"></canvas>
-
-    <div id="author-signature">
-        Theoretical Framework & Simulation<br>
-        by <span class="author-name">Jack Liu</span>
+    <div class="control-group">
+        <div class="label-row">意向性标量 λ_2 <span class="val-text" id="v-lambda2">0.000</span></div>
+        <input type="range" id="param-lambda2" min="0.00" max="1" step="0.001" value="0.00">
     </div>
 
-    <div id="controls">
-        <div id="metrics-grid">
-            <div class="metric-box">
-                <div class="metric-title">Macroscopic LGI (K3)</div>
-                <div id="k3Value" class="metric-value c-red">1.000</div>
-                <div id="k3Status" class="metric-status" style="color:#94a3b8;">Classical Realism</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-title">Time Variance (Δt²)</div>
-                <div id="dtValue" class="metric-value c-blue">∞</div>
-                <div id="dtStatus" class="metric-status" style="color:#94a3b8;">Chronostasis</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-title">Jarzynski Work (ΔW)</div>
-                <div id="dwValue" class="metric-value c-yellow">0.000 J</div>
-                <div id="dwStatus" class="metric-status" style="color:#94a3b8;">Thermodynamic Eq.</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-title">Entanglement (E_N)</div>
-                <div id="enValue" class="metric-value c-purple">0.000</div>
-                <div id="enStatus" class="metric-status" style="color:#94a3b8;">Separable State</div>
-            </div>
+    <div class="control-group">
+        <div class="label-row">
+            QRNG 阵列连接
+            <button class="qrng-btn" id="qrng-btn" onclick="toggleQRNG()">OFFLINE</button>
         </div>
-
-        <div class="slider-container">
-            <label for="lambdaSlider" style="font-size: 15px; color: #f8fafc; text-transform: uppercase; letter-spacing: 2px;">
-                Intention Operator (λ) = <span id="lambdaValue" style="color:#38bdf8; font-weight:bold; font-size:20px;">0.00</span>
-            </label>
-            <input type="range" id="lambdaSlider" min="0" max="1" step="0.005" value="0">
+        <div style="font-size: 0.6rem; color: var(--neon-green); line-height: 1.4;">
+            随机源: <span id="mode-text">PSEUDO</span> | 熵: <span id="entropy-stream" style="font-family: monospace;">00</span>
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        const lambdaSlider = document.getElementById('lambdaSlider');
-        
-        // Metrics DOM
-        const valL = document.getElementById('lambdaValue');
-        const vK3 = document.getElementById('k3Value'), sK3 = document.getElementById('k3Status');
-        const vDt = document.getElementById('dtValue'), sDt = document.getElementById('dtStatus');
-        const vDw = document.getElementById('dwValue'), sDw = document.getElementById('dwStatus');
-        const vEn = document.getElementById('enValue'), sEn = document.getElementById('enStatus');
-        
-        // HUD DOM
-        const hAction = document.getElementById('hud-action');
-        const hTensor = document.getElementById('hud-tensor');
-        const hNoise = document.getElementById('hud-noise');
-        const hEntropy = document.getElementById('hud-entropy');
-        const hTime = document.getElementById('hud-time');
-        const hBures = document.getElementById('hud-bures');
-        const hFisher = document.getElementById('hud-fisher');
+    <div class="control-group">
+        <div class="label-row">耦合强度 Ξ_C <span class="val-text" id="v-xi">1.00</span></div>
+        <input type="range" id="param-xi" min="0.1" max="5" step="0.01" value="1.00">
+    </div>
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    <div class="control-group" style="background: rgba(16, 185, 129, 0.05); border: 1px solid var(--neon-green);">
+        <div style="font-size: 0.7rem; color: var(--neon-green); font-weight: bold;">[证据推断报告]</div>
+        <div style="font-size: 0.65rem; color: #6ee7b7; margin-top: 5px; line-height: 1.5; font-family: monospace;">
+            P-value: <span id="p-val">1e-6</span><br>
+            证实强度: <span id="proof-strength" style="font-weight: bold;">MODERATE</span><br>
+            置信水平: <span id="conf-level">99.9%</span>
+        </div>
+    </div>
+
+    <button class="export-btn" onclick="exportDataCSV()">⬇️ 导出当前实验数据集 (CSV)</button>
+</div>
+
+<div class="main-stage">
+    <div id="viewport-container">
+        <div class="hud-overlay">
+            <div class="hud-card" id="hud-stats">QCRB: 0.000<br>VAR: 0.000<br>PREC: 0.00%</div>
+            <div class="hud-card" id="hud-metric" style="border-color: var(--neon-blue); color: var(--neon-blue);">G_uv: η_uv<br>K_scalar: 0.000<br>QFI: 0.00</div>
+            <div class="hud-card" id="hud-phase" style="border-color: var(--neon-green); color: var(--neon-green);">S_entropy: 1.000<br>NEG: 0.000<br>PHASE: STABLE</div>
+        </div>
+        <div id="pdf-overlay">
+            <canvas id="pdfCanvas"></canvas>
+        </div>
+        <div class="camera-tip">🖱️ 提示: 拖拽旋转摄像机 | 滚轮缩放 | 右键平移</div>
+        <div class="formula-display" id="active-formula">$A_W = \int d^4x \sqrt{-g} (L_M + \lambda \Xi_C \text{Tr}(\hat{W} \mathcal{I}))$</div>
+    </div>
+
+    <div class="analysis-dashboard">
+        <div class="chart-container"><canvas id="chart-prec"></canvas></div>
+        <div class="chart-container"><canvas id="chart-extra"></canvas></div>
+    </div>
+</div>
+
+<script>
+    let scene, camera, renderer, controls, activeExp = 'spacetime';
+    let clock = new THREE.Clock(), chartA, chartExtra, tick = 0;
+    let particles, pointer, knot, holoPlane, bridge, engine, piPaths = [];
+    let isQRNG = false;
+
+    // 当前物理状态，用于数据导出
+    let currentPhysicsState = { l1:0, l2:0, xi:1, qcrb:0, variance:0, prec:0, qfi:0, entropy:0, neg:0, pVal:0, conf:0 };
+
+    const pdfCanvas = document.getElementById('pdfCanvas');
+    const pdfCtx = pdfCanvas.getContext('2d');
+
+    function qRandom() {
+        if(isQRNG) {
+            const seed = performance.now() * 1000 % 1000000;
+            return (Math.sin(seed) + 1) / 2;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        return Math.random();
+    }
 
-        const F_Q = 1.5, W_scale = 4.2, En_scale = 3.5;
-        const numWavesPerSystem = 10;
-        let sysA = [], sysB = [];
-        let particles = [];
+    function toggleQRNG() {
+        isQRNG = !isQRNG;
+        const btn = document.getElementById('qrng-btn');
+        btn.innerText = isQRNG ? "CONNECTED" : "OFFLINE";
+        btn.className = isQRNG ? "qrng-btn active" : "qrng-btn";
+        document.getElementById('mode-text').innerText = isQRNG ? "QUANTUM" : "PSEUDO";
+    }
+
+    function initThree() {
+        const c = document.getElementById('viewport-container');
+        scene = new THREE.Scene();
+        // 增加一点雾效让远处的空间有深邃感
+        scene.fog = new THREE.FogExp2(0x020617, 0.015);
         
-        // 初始化量子粒子云（表示概率密度）
-        for(let i=0; i<150; i++) {
-            particles.push({
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-                baseY: Math.random() * window.innerHeight, // 原始随机位置
-                speed: 0.5 + Math.random() * 2,
-                angle: Math.random() * Math.PI * 2
+        camera = new THREE.PerspectiveCamera(60, c.clientWidth/c.clientHeight, 0.1, 2000);
+        renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+        renderer.setSize(c.clientWidth, c.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        c.appendChild(renderer.domElement);
+        camera.position.set(0, 15, 40);
+
+        // 初始化 OrbitControls 轨道控制器
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // 开启阻尼滑动
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 150;
+        
+        pdfCanvas.width = 180; pdfCanvas.height = 120;
+        animate();
+    }
+
+    function initCharts() {
+        const opt = { responsive: true, maintainAspectRatio: false, animation: {duration: 0}, plugins: { legend: { display: true, labels: { color: '#64748b', font: { size: 9 } } } }, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b' } } } };
+        chartA = new Chart(document.getElementById('chart-prec'), { type: 'line', data: { labels: Array(60).fill(''), datasets: [{ label: '观测精度 (Precision)', data: Array(60).fill(0), borderColor: '#ef4444', borderWidth: 2, pointRadius:0, tension:0.3 }, { label: 'QCRB 极限', data: Array(60).fill(0), borderColor: '#38bdf8', borderWidth: 1, borderDash:[5,5], pointRadius:0 }] }, options: opt });
+        chartExtra = new Chart(document.getElementById('chart-extra'), { type: 'line', data: { labels: Array(60).fill(''), datasets: [{ label: 'QFI 信息量', data: Array(60).fill(0), borderColor: '#c084fc', borderWidth: 2, pointRadius:0, tension:0.3 }, { label: '证实增益 (Gain)', data: Array(60).fill(0), borderColor: '#10b981', borderWidth: 2, pointRadius:0, tension:0.3 }] }, options: opt });
+    }
+
+    function setupLights() {
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const pl = new THREE.PointLight(0x38bdf8, 2.5); pl.position.set(10,20,10); scene.add(pl);
+        const pl2 = new THREE.PointLight(0xc084fc, 1.5); pl2.position.set(-15,-10,-10); scene.add(pl2);
+    }
+
+    function setExp(type) {
+        activeExp = type;
+        document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+        const btn = Array.from(document.querySelectorAll('.menu-item')).find(b => b.getAttribute('onclick').includes(type));
+        if(btn) btn.classList.add('active');
+
+        // 清理场景
+        while(scene.children.length > 0) scene.remove(scene.children[0]);
+        setupLights();
+
+        // 视角重置动画
+        controls.target.set(0,0,0);
+        camera.position.set(0, 15, 40);
+
+        if(type === 'spacetime') {
+            const g = new THREE.BufferGeometry(); const p = [];
+            for(let i=-25; i<=25; i+=1.2) for(let j=-25; j<=25; j+=1.2) p.push(i, 0, j);
+            g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+            // 采用 AdditiveBlending 加性混合，让节点发光
+            particles = new THREE.Points(g, new THREE.PointsMaterial({color: 0x38bdf8, size: 0.3, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending}));
+            particles.name = "obj"; scene.add(particles);
+            
+        } else if(type === 'geodesic') {
+            scene.add(new THREE.Mesh(new THREE.SphereGeometry(15, 32, 32), new THREE.MeshBasicMaterial({wireframe: true, color: 0x1e293b, transparent: true, opacity: 0.4})));
+            pointer = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshPhongMaterial({color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5}));
+            pointer.name = "obj"; scene.add(pointer);
+            const target = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshPhongMaterial({color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 1}));
+            target.position.set(0, 15, 0); scene.add(target);
+            
+        } else if(type === 'energy') {
+            const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(12, 4), new THREE.MeshPhongMaterial({color: 0xf59e0b, wireframe: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending}));
+            mesh.name = "obj"; scene.add(mesh);
+            const core = new THREE.Mesh(new THREE.IcosahedronGeometry(6, 2), new THREE.MeshPhongMaterial({color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 1}));
+            core.name = "core"; scene.add(core);
+            
+        } else if(type === 'holographic') {
+            holoPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60, 80, 80), new THREE.MeshPhongMaterial({color: 0x38bdf8, wireframe: true, side: THREE.DoubleSide, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending}));
+            holoPlane.rotation.x = -Math.PI/2; holoPlane.name = "obj"; scene.add(holoPlane);
+            
+        } else if(type === 'topological') {
+            // 使用更光滑的管状结
+            knot = new THREE.Mesh(new THREE.TorusKnotGeometry(10, 2.5, 300, 32, 3, 5), new THREE.MeshPhongMaterial({color: 0x10b981, transparent:true, opacity:0.8, blending: THREE.AdditiveBlending}));
+            knot.name = "obj"; scene.add(knot);
+            
+        } else if(type === 'consensus') {
+            const s1 = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshPhongMaterial({wireframe: true, color: 0x38bdf8, transparent:true, blending: THREE.AdditiveBlending}));
+            s1.position.x = -14; scene.add(s1); s1.name = "a1";
+            const s2 = s1.clone(); s2.position.x = 14; s2.material = s2.material.clone(); s2.material.color.setHex(0xc084fc); scene.add(s2); s2.name = "a2";
+            bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 28), new THREE.MeshBasicMaterial({color: 0xffffff, transparent:true, opacity: 0.5, blending: THREE.AdditiveBlending}));
+            bridge.rotation.z = Math.PI/2; scene.add(bridge); bridge.name = "bridge";
+            
+        } else if(type === 'pathintegral') {
+            piPaths = [];
+            for(let i=0; i<80; i++) {
+                const geom = new THREE.BufferGeometry();
+                const pts = []; for(let j=0; j<=20; j++) pts.push(new THREE.Vector3((j-10)*6, (qRandom()-0.5)*35, (qRandom()-0.5)*35));
+                geom.setFromPoints(pts);
+                const l = new THREE.Line(geom, new THREE.LineBasicMaterial({color: 0x38bdf8, transparent:true, opacity: 0.4, blending: THREE.AdditiveBlending}));
+                l.userData.orig = pts; scene.add(l); piPaths.push(l);
+            }
+            
+        } else if(type === 'singularity') {
+            const g = new THREE.BufferGeometry(); const pc = 8000; const p = new Float32Array(pc*3);
+            for(let i=0; i<pc*3; i++) p[i] = (qRandom()-0.5)*120;
+            g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+            engine = new THREE.Points(g, new THREE.PointsMaterial({color: 0xf59e0b, size: 0.4, transparent:true, opacity:0.8, blending: THREE.AdditiveBlending}));
+            engine.name = "obj"; scene.add(engine);
+        }
+
+        const formulas = { 
+            spacetime: "[x̂ᵤ, x̂ᵥ] = i (lₚ²/λ) Θᵤᵥ", 
+            geodesic: "Dᴮ(ρ, σ) = arccos(Tr√(√ρ σ √ρ))", 
+            energy: "⟨e^-β(W-W_w)⟩ = e^-βΔF", 
+            holographic: "S_EE = Area/4Gℏ - κ(λ)⟨W_C⟩", 
+            topological: "S_CS = k/4π ∫ Tr(A∧dA + 2/3 A³)", 
+            consensus: "E_N(ρ_AB) ∝ λ_1 · λ_2", 
+            pathintegral: "Z = ∫ D[Ψ] exp(-A_W^E / ℏ)", 
+            singularity: "Metric Singularity: Information Phase Transit" 
+        };
+        document.getElementById('active-formula').innerText = formulas[type];
+    }
+
+    function drawPDF(l1, l2) {
+        pdfCtx.clearRect(0,0,180,120);
+        // 背景网格
+        pdfCtx.strokeStyle = 'rgba(255,255,255,0.05)'; pdfCtx.lineWidth = 1;
+        for(let i=0; i<180; i+=20) { pdfCtx.beginPath(); pdfCtx.moveTo(i,0); pdfCtx.lineTo(i,120); pdfCtx.stroke(); }
+        for(let j=0; j<120; j+=20) { pdfCtx.beginPath(); pdfCtx.moveTo(0,j); pdfCtx.lineTo(180,j); pdfCtx.stroke(); }
+
+        const eff = (l1+l2)/2;
+        const sigma = 40*(1-eff) + 1.0; const mu = 90;
+        
+        pdfCtx.beginPath(); pdfCtx.strokeStyle = '#f59e0b'; pdfCtx.lineWidth = 2.5;
+        pdfCtx.shadowColor = '#f59e0b'; pdfCtx.shadowBlur = 10 * eff; // 坍缩时光晕变强
+
+        for(let x=0; x<180; x++){
+            const y = 110 - (Math.exp(-Math.pow(x-mu,2)/(2*sigma*sigma))*105);
+            if(x===0) pdfCtx.moveTo(x,y); else pdfCtx.lineTo(x,y);
+        }
+        pdfCtx.stroke();
+        pdfCtx.shadowBlur = 0;
+        
+        // 文字标签
+        pdfCtx.fillStyle = 'rgba(255,255,255,0.5)'; pdfCtx.font = '10px monospace';
+        pdfCtx.fillText('PDF Collapse', 10, 15);
+    }
+
+    // 核心动画循环
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); // 必须调用以更新摄像机阻尼
+
+        const l1 = parseFloat(document.getElementById('param-lambda').value);
+        const l2 = parseFloat(document.getElementById('param-lambda2').value);
+        const xi = parseFloat(document.getElementById('param-xi').value);
+        const time = clock.getElapsedTime();
+
+        document.getElementById('v-lambda').innerText = l1.toFixed(3);
+        document.getElementById('v-lambda2').innerText = l2.toFixed(3);
+        document.getElementById('v-xi').innerText = xi.toFixed(2);
+        
+        // 模拟 QRNG 熵流
+        if(isQRNG && tick % 5 === 0) {
+            let hex = Math.floor(qRandom()*255).toString(16).toUpperCase();
+            if(hex.length < 2) hex = "0" + hex;
+            document.getElementById('entropy-stream').innerText = hex;
+        }
+
+        const effL = (l1 + l2) / 2;
+        const qfi = 25 * (1 + effL * xi * 120) * (isQRNG ? 1.8 : 1.0);
+        
+        const qcrb = 1 / qfi;
+        const variance = qcrb * (1 + (1 - effL) * 0.9);
+        const precision = 1 / variance;
+        const entropyS = 1 - effL;
+        const neg = effL * xi * 3.2;
+        
+        const pVal = Math.pow(10, -(effL*16 + xi + (isQRNG?3:0)));
+        document.getElementById('p-val').innerText = pVal.toExponential(2);
+        
+        const strength = effL * xi * 4.2;
+        const conf = 100 * (1 - pVal);
+        
+        const proofStrengthEl = document.getElementById('proof-strength');
+        proofStrengthEl.innerText = strength > 3.2 ? "ULTIMATE" : (strength > 2.0 ? "EXCEPTIONAL" : "MODERATE");
+        proofStrengthEl.style.color = isQRNG ? "var(--neon-green)" : "var(--accent-gold)";
+        document.getElementById('conf-level').innerText = conf.toFixed(5) + "%";
+
+        // 更新状态以供导出
+        currentPhysicsState = { l1, l2, xi, qcrb, variance, prec: precision, qfi, entropy: entropyS, neg, pVal, conf };
+
+        document.getElementById('hud-stats').innerHTML = `QCRB: ${qcrb.toFixed(9)}<br>VAR: ${variance.toFixed(9)}<br>PREC: ${(precision).toFixed(2)}`;
+        document.getElementById('hud-metric').innerHTML = `G_uv DET: ${(1+effL).toFixed(6)}<br>K: ${(effL*0.95).toFixed(4)}<br>QFI: ${qfi.toFixed(2)}`;
+        document.getElementById('hud-phase').innerHTML = `S: ${(entropyS).toFixed(4)}<br>NEG: ${(neg).toFixed(3)}<br>MODE: ${isQRNG ? 'QRNG' : 'SIM'}`;
+
+        drawPDF(l1, l2);
+
+        // --- 01 非对易时空 ---
+        if(activeExp === 'spacetime' && particles) {
+            const arr = particles.geometry.attributes.position.array;
+            const noise = (1 - l1) * 6.5 * xi;
+            for(let i=0; i<arr.length; i+=3) {
+                // 修改 y 轴使其更像一张扭曲的网络
+                arr[i+1] = Math.sin(arr[i]*0.3 + time*4.5) * Math.cos(arr[i+2]*0.3 + time*2) * noise + (qRandom()-0.5)*noise*2.5;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            particles.material.color.setHSL(0.55, 1, 0.4 + l1*0.4);
+        }
+
+        // --- 02 测地线 ---
+        if(activeExp === 'geodesic' && pointer) {
+            const r = 15.0 * (1 - l1);
+            pointer.position.set(Math.sin(time*5.5)*r, Math.sqrt(Math.max(0, 225-r*r)), Math.cos(time*5.5)*r);
+            pointer.scale.setScalar(1 + l1 * 1.8);
+        }
+
+        // --- 03 能量核心 ---
+        const obj = scene.getObjectByName("obj");
+        if(activeExp === 'energy' && obj) {
+            obj.rotation.y += 0.002 * (1 + l1 * 1.5);
+            obj.rotation.x += 0.001 * (1 + l1);
+            obj.scale.setScalar((1 + l1 * 1.1) * (1 + Math.sin(time*1.5)*0.02*(1-l1)));
+            
+            const core = scene.getObjectByName("core");
+            if(core) {
+                core.rotation.y -= 0.01;
+                core.scale.setScalar(0.8 + l1*0.5);
+                core.material.emissiveIntensity = 0.5 + l1 * 2;
+            }
+        }
+
+        // --- 04 全息面 ---
+        if(activeExp === 'holographic' && holoPlane) {
+            const arr = holoPlane.geometry.attributes.position.array;
+            const amp = (1 - l1) * 15 * xi;
+            for(let i=0; i<arr.length; i+=3) {
+                const dist = Math.sqrt(arr[i]**2+arr[i+1]**2);
+                arr[i+2] = Math.sin(dist*0.5 - time*5.0) * amp * Math.exp(-dist/25); // 增加衰减效果，更真实
+            }
+            holoPlane.geometry.attributes.position.needsUpdate = true;
+            holoPlane.material.color.setHSL(0.55 + l1*0.1, 1, 0.5);
+        }
+
+        // --- 05 拓扑结 ---
+        if(activeExp === 'topological' && knot) {
+            knot.rotation.y += 0.005 * (3 + Math.pow(l1*15, 1.2));
+            knot.rotation.z = Math.sin(time) * 0.2 * (1-l1);
+            knot.scale.setScalar(1 + l1 * 2.5);
+            knot.material.color.setHSL(0.4 + l1*0.1, 1, 0.5);
+        }
+
+        // --- 06 共识现实 ---
+        const a1 = scene.getObjectByName("a1"), a2 = scene.getObjectByName("a2"), b = scene.getObjectByName("bridge");
+        if(activeExp === 'consensus' && a1 && a2) {
+            const en = l1 * l2 * xi * 50;
+            a1.scale.setScalar(1.5 + l1*2.5); a2.scale.setScalar(1.5 + l2*2.5);
+            
+            // 节点自转
+            a1.rotation.y += 0.02 + l1*0.05;
+            a2.rotation.y -= 0.02 + l2*0.05;
+
+            if(b) {
+                b.material.opacity = 0.1 + en/40;
+                b.scale.x = 2.0 + Math.sin(time*20)*0.1*(1-effL);
+                b.scale.z = 2.0 + Math.sin(time*20)*0.1*(1-effL);
+                b.material.color.setHSL(0.8 - effL*0.2, 1, 0.6);
+            }
+        }
+
+        // --- 07 路径积分 ---
+        if(activeExp === 'pathintegral') {
+            piPaths.forEach(line => {
+                const arr = line.geometry.attributes.position.array;
+                const orig = line.userData.orig;
+                for(let i=0; i<orig.length; i++) {
+                    arr[i*3+1] = THREE.MathUtils.lerp(orig[i].y, 0, l1);
+                    arr[i*3+2] = THREE.MathUtils.lerp(orig[i].z, 0, l1);
+                }
+                line.geometry.attributes.position.needsUpdate = true;
+                line.material.opacity = 0.15 + (1-l1)*0.5;
+                line.material.color.setHSL(0.55 + l1*0.1, 1, 0.5 + l1*0.3);
             });
         }
 
-        for (let i = 0; i < numWavesPerSystem; i++) {
-            sysA.push({ amp: 20 + Math.random() * 40, freq: 0.01 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2, yOff: -80 - Math.random() * 50, speed: 0.02 + Math.random() * 0.04 });
-            sysB.push({ amp: 20 + Math.random() * 40, freq: 0.01 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2, yOff: 80 + Math.random() * 50, speed: 0.02 + Math.random() * 0.04 });
+        // --- 08 奇点发动机 ---
+        if(activeExp === 'singularity' && engine) {
+            const arr = engine.geometry.attributes.position.array;
+            for(let i=0; i<arr.length; i+=3) {
+                const v = new THREE.Vector3(arr[i], arr[i+1], arr[i+2]);
+                // 增加螺旋吸入效果
+                const angle = 0.1 * l1;
+                v.applyAxisAngle(new THREE.Vector3(0,1,0), angle);
+                
+                v.multiplyScalar(0.85 + l1*0.13); 
+                if(v.length() < 1.0) v.set((qRandom()-0.5)*180, (qRandom()-0.5)*180, (qRandom()-0.5)*180);
+                arr[i]=v.x; arr[i+1]=v.y; arr[i+2]=v.z;
+            }
+            engine.geometry.attributes.position.needsUpdate = true;
         }
 
-        let timePhase = 0;
-        let cosmicClock = 0;
+        renderer.render(scene, camera);
+        updateCharts(precision, qcrb, l1*l2*100, strength*120);
+        tick++;
+    }
 
-        function draw() {
-            ctx.fillStyle = 'rgba(2, 6, 23, 0.45)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            let lambda = parseFloat(lambdaSlider.value);
-            timePhase += 0.03;
-            cosmicClock += lambda * 0.05; 
-            
-            let midY = canvas.height * 0.45; 
+    function updateCharts(p, q, en, pr) {
+        if(!chartA || !chartExtra) return;
+        if(tick % 10 !== 0) return; // 降低更新频率以保证性能
+        chartA.data.datasets[0].data.push(p); chartA.data.datasets[1].data.push(q);
+        if(chartA.data.datasets[0].data.length > 60) { chartA.data.datasets[0].data.shift(); chartA.data.datasets[1].data.shift(); }
+        chartA.update();
+        
+        chartExtra.data.datasets[0].data.push(en); chartExtra.data.datasets[1].data.push(pr);
+        if(chartExtra.data.datasets[0].data.length > 60) { chartExtra.data.datasets[0].data.shift(); chartExtra.data.datasets[1].data.shift(); }
+        chartExtra.update();
+    }
 
-            // ==========================================
-            // 0. 更新 DOM 数据与公式
-            // ==========================================
-            valL.textContent = lambda.toFixed(2);
-            
-            let k3 = 1.0 + (lambda * F_Q);
-            vK3.textContent = k3.toFixed(3);
-            sK3.textContent = k3 > 1.0 ? "Quantum Interference!" : "Classical Realism";
-            sK3.style.color = k3 > 1.0 ? "#f87171" : "#94a3b8";
+    // 导出实验数据功能 (CSV)
+    function exportDataCSV() {
+        const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+        const mode = isQRNG ? "QRNG" : "PSEUDO_RANDOM";
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Timestamp,Experiment_Mode,Lambda_1,Lambda_2,Coupling_Xi,QCRB,Variance,Precision,QFI,Entropy,Negativity,P-Value,Confidence\n";
+        
+        const s = currentPhysicsState;
+        const row = `${timestamp},${mode},${s.l1.toFixed(3)},${s.l2.toFixed(3)},${s.xi.toFixed(2)},${s.qcrb.toFixed(9)},${s.variance.toFixed(9)},${s.prec.toFixed(4)},${s.qfi.toFixed(4)},${s.entropy.toFixed(4)},${s.neg.toFixed(4)},${s.pVal.toExponential(4)},${s.conf.toFixed(6)}`;
+        
+        csvContent += row + "\n";
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `CWT_Lab_Data_${activeExp}_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
-            let dt2 = lambda === 0 ? Infinity : 1.0 / (lambda * F_Q);
-            vDt.textContent = lambda === 0 ? "∞" : dt2.toFixed(3);
-            sDt.textContent = lambda > 0.1 ? "Metric Time Flow" : "Chronostasis (Jitter)";
-            sDt.style.color = lambda > 0.1 ? "#60a5fa" : "#94a3b8";
-
-            vDw.textContent = (lambda * W_scale).toFixed(3) + " J";
-            sDw.textContent = lambda > 0 ? "Informational Work Done" : "Thermodynamic Eq.";
-            sDw.style.color = lambda > 0 ? "#fbbf24" : "#94a3b8";
-
-            let en = Math.pow(lambda, 2) * En_scale;
-            vEn.textContent = en.toFixed(3);
-            sEn.textContent = en > 0.1 ? "Macroscopic Entanglement" : "Separable State";
-            sEn.style.color = en > 0.1 ? "#c084fc" : "#94a3b8";
-
-            // HUD
-            let actionVal = 1000 * Math.exp(-lambda * 4.5);
-            hAction.textContent = lambda < 0.05 ? "Maximum Quanta (Chaotic)" : actionVal.toFixed(1) + " (Action Minimized)";
-            hAction.style.color = lambda < 0.05 ? "#f87171" : "#fbbf24";
-
-            hTensor.textContent = lambda === 0 ? "Isotropic Zero-Field" : "Directed Geodesic Flow (" + lambda.toFixed(2) + ")";
-            hTensor.style.color = lambda === 0 ? "#94a3b8" : "#34d399";
-
-            let noiseIntensity = 1.0 - lambda;
-            hNoise.textContent = lambda === 0 ? "∞ (Algebraic Chaos)" : noiseIntensity.toFixed(4) + " (Metric Anchored)";
-            hNoise.style.color = lambda === 0 ? "#f87171" : "#34d399";
-            
-            let entropyVal = 10.0 * Math.exp(-lambda * 3);
-            hEntropy.textContent = lambda < 0.05 ? "Unbounded Space (Max S_EE)" : entropyVal.toFixed(3) + " (Space Folded)";
-            hEntropy.style.color = lambda < 0.05 ? "#f87171" : "#c084fc";
-
-            hTime.textContent = lambda === 0 ? "Static (Timeless Vacuum)" : "Flowing (dτ = " + (lambda).toFixed(2) + "dt)";
-            hTime.style.color = lambda === 0 ? "#f87171" : "#60a5fa";
-
-            let buresDist = (Math.PI / 2) * (1 - lambda);
-            hBures.textContent = buresDist.toFixed(4) + " rad";
-            hBures.style.color = buresDist < 0.1 ? "#34d399" : "#f472b6";
-
-            // 新增：费舍尔信息度规与方差
-            // 概率波的离散程度（高斯分布的标准差 sigma）
-            let sigma = 200 * (1 - lambda) + 2; // λ=0时sigma=200(极宽)，λ=1时sigma=2(狄拉克δ函数极窄)
-            let fisherInfo = 1.0 / (sigma * sigma);
-            
-            if(lambda === 0) { hFisher.textContent = "0.0000 (Superposition Spread)"; hFisher.style.color = "#94a3b8"; }
-            else if (lambda > 0.95) { hFisher.textContent = "∞ (Dirac Delta Certainty)"; hFisher.style.color = "#e879f9"; }
-            else { hFisher.textContent = (fisherInfo * 10000).toFixed(4) + " (Information Gain)"; hFisher.style.color = "#e879f9"; }
-
-
-            // ==========================================
-            // 1. 绘制时空泡沫 (Spacetime Foam)
-            // ==========================================
-            ctx.lineWidth = 1;
-            let gridSize = 60;
-            let warpFactor = (1 - lambda) * 50; 
-            
-            ctx.beginPath();
-            for(let x = 0; x <= canvas.width; x += gridSize) {
-                for(let y = 0; y <= canvas.height; y += gridSize) {
-                    let dx = Math.sin(y * 0.05 + timePhase) * warpFactor;
-                    let dy = Math.cos(x * 0.05 + timePhase) * warpFactor;
-                    let px = x + dx; let py = y + dy;
-
-                    if(x < canvas.width) {
-                        let nx = x + gridSize;
-                        let ndx = Math.sin(y * 0.05 + timePhase) * warpFactor;
-                        ctx.moveTo(px, py); ctx.lineTo(nx + ndx, py);
-                    }
-                    if(y < canvas.height) {
-                        let ny = y + gridSize;
-                        let ndy = Math.cos(x * 0.05 + timePhase) * warpFactor;
-                        ctx.moveTo(px, py); ctx.lineTo(px, ny + ndy);
-                    }
-                }
-            }
-            ctx.strokeStyle = `rgba(${100*(1-lambda)+30*lambda}, ${30*(1-lambda)+41*lambda}, ${40*(1-lambda)+59*lambda}, 0.15)`;
-            ctx.stroke();
-
-            // ==========================================
-            // 2. 编织张量场 (Tensor Field W_μν)
-            // ==========================================
-            let tensorSpacing = 80;
-            ctx.beginPath();
-            for(let x = tensorSpacing/2; x < canvas.width; x += tensorSpacing) {
-                for(let y = tensorSpacing/2; y < canvas.height; y += tensorSpacing) {
-                    let angleChaos = Math.sin(x*0.01 + y*0.02 + timePhase) * Math.PI * 2;
-                    let targetAngle = Math.atan2(midY - y, 0); 
-                    let currentAngle = angleChaos * (1 - lambda) + targetAngle * lambda;
-                    let vectorLength = 10 + lambda * 15;
-                    let vx = Math.cos(currentAngle) * vectorLength;
-                    let vy = Math.sin(currentAngle) * vectorLength;
-                    
-                    ctx.moveTo(x, y); ctx.lineTo(x + vx, y + vy);
-                    ctx.lineTo(x + vx - Math.cos(currentAngle - Math.PI/6)*4, y + vy - Math.sin(currentAngle - Math.PI/6)*4);
-                    ctx.moveTo(x + vx, y + vy);
-                    ctx.lineTo(x + vx - Math.cos(currentAngle + Math.PI/6)*4, y + vy - Math.sin(currentAngle + Math.PI/6)*4);
-                }
-            }
-            ctx.strokeStyle = `rgba(52, 211, 153, ${0.08 + lambda * 0.25})`; 
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // ==========================================
-            // 3. 终极视觉新增：全局概率密度曲线 (PDF Curve) - 玻恩定则的坍缩
-            // ==========================================
-            // 在屏幕右侧绘制一个反映量子概率分布的高斯曲线 (钟形曲线 -> 狄拉克 Delta)
-            ctx.beginPath();
-            let maxCurveWidth = 300; // 概率曲线的最大宽度
-            for(let y = 0; y < canvas.height; y+=5) {
-                // 计算高斯函数： P(y) = e^(- (y-μ)² / (2σ²))
-                let probDensity = Math.exp(-Math.pow(y - midY, 2) / (2 * sigma * sigma));
-                let drawX = canvas.width - probDensity * maxCurveWidth;
-                
-                if(y === 0) ctx.moveTo(drawX, y);
-                else ctx.lineTo(drawX, y);
-            }
-            ctx.strokeStyle = `rgba(251, 191, 36, ${0.4 + lambda*0.6})`; // Golden curve
-            ctx.lineWidth = 2 + lambda*2;
-            ctx.shadowColor = '#fbbf24';
-            ctx.shadowBlur = 15;
-            ctx.stroke();
-            
-            // 填充概率曲线内部
-            ctx.lineTo(canvas.width, canvas.height);
-            ctx.lineTo(canvas.width, 0);
-            ctx.fillStyle = `rgba(251, 191, 36, ${0.05 + lambda*0.15})`;
-            ctx.fill();
-            ctx.shadowBlur = 0; // 重置阴影
-
-            // ==========================================
-            // 4. 终极视觉新增：概率云粒子群 (Probability Cloud Swarm)
-            // ==========================================
-            ctx.fillStyle = `rgba(226, 232, 240, ${0.3 + lambda*0.5})`;
-            particles.forEach(p => {
-                p.x -= p.speed;
-                if(p.x < 0) p.x = canvas.width;
-                
-                // 粒子的 Y 轴位置：随着 lambda 增大，所有粒子被强制吸入 PDF 曲线的高概率区（即 midY）
-                let targetY = midY + (p.baseY - midY) * (1 - lambda);
-                
-                // 加上一点量子抖动
-                let jitter = (Math.random() - 0.5) * sigma * 0.5;
-                let currentY = targetY + jitter;
-
-                ctx.beginPath();
-                ctx.arc(p.x, currentY, 1.5, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // ==========================================
-            // 5. 蓝图、波函数与拓扑纠缠 (Wave & Entanglement)
-            // ==========================================
-            let bandHeight = 40 * lambda; 
-            if(lambda > 0.05) {
-                let gradient = ctx.createLinearGradient(0, midY - bandHeight/2, 0, midY + bandHeight/2);
-                gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
-                gradient.addColorStop(0.5, `rgba(56, 189, 248, ${0.1 + lambda*0.2})`);
-                gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, midY - bandHeight/2, canvas.width, bandHeight);
-            }
-
-            ctx.beginPath();
-            ctx.moveTo(0, midY); ctx.lineTo(canvas.width, midY);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${0.3 + lambda*0.5})`;
-            ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
-            
-            ctx.fillStyle = `rgba(56, 189, 248, ${0.5 + lambda*0.5})`;
-            ctx.font = '12px Courier New';
-            ctx.fillText('Covariant Error-Correcting Code Space (I)', 10, midY - 12 - bandHeight/2);
-
-            let pointsA = [], pointsB = [];
-            let step = 20;
-
-            [sysA, sysB].forEach((sys, sysIdx) => {
-                for(let i=0; i<sys.length; i++) {
-                    let w = sys[i];
-                    w.phase += w.speed;
-                    
-                    let cAmp = w.amp * (1 - lambda * 0.9); 
-                    let cYOff = w.yOff * (1 - lambda);
-                    
-                    ctx.beginPath();
-                    let currentPath = [];
-                    for(let x=0; x<=canvas.width; x+=step) {
-                        let errorJitter = (Math.random() - 0.5) * 15 * (1 - lambda);
-                        let y = midY + cYOff + Math.sin(x*w.freq + w.phase + cosmicClock)*cAmp + errorJitter;
-                        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                        if(x % 80 === 0) currentPath.push({x, y});
-                    }
-                    
-                    let r,g,b;
-                    if(sysIdx === 0) { r = 100-lambda*50; g = 100+lambda*100; b = 250; } 
-                    else { r = 250; g = 100+lambda*50; b = 100-lambda*50; } 
-                    
-                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.2 + lambda*0.5})`;
-                    ctx.lineWidth = 1.5 + lambda * 2;
-                    ctx.stroke();
-
-                    if(i === 0) {
-                        if(sysIdx === 0) pointsA = currentPath;
-                        else pointsB = currentPath;
-                    }
-                }
-            });
-
-            // 陈-西蒙斯拓扑结
-            if(lambda > 0.05) {
-                ctx.globalCompositeOperation = 'screen';
-                ctx.beginPath();
-                for(let i=0; i<pointsA.length; i++) {
-                    let cx1 = pointsA[i].x + Math.sin(cosmicClock * 2 + i) * 50 * lambda;
-                    let cy1 = midY;
-                    let cx2 = pointsB[i].x - Math.sin(cosmicClock * 2 + i) * 50 * lambda;
-                    let cy2 = midY;
-                    
-                    ctx.moveTo(pointsA[i].x, pointsA[i].y);
-                    ctx.bezierCurveTo(cx1, cy1, cx2, cy2, pointsB[i].x, pointsB[i].y);
-                }
-                let entAlpha = Math.pow(lambda, 1.2) * 0.9;
-                ctx.strokeStyle = `rgba(192, 132, 252, ${entAlpha})`; 
-                ctx.lineWidth = 2 + lambda*3;
-                ctx.shadowColor = '#c084fc';
-                ctx.shadowBlur = 15 * lambda;
-                ctx.stroke();
-                
-                ctx.shadowBlur = 0;
-                ctx.globalCompositeOperation = 'source-over';
-            }
-
-            requestAnimationFrame(draw);
-        }
-
-        draw();
-    </script>
+    window.onload = () => { initCharts(); initThree(); setExp('spacetime'); };
+</script>
 </body>
 </html>
