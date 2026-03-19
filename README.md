@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19118910.svg)](https://doi.org/10.5281/zenodo.19118910)
 # Consciousness Weaving Theory (CWT) - Simulation Engine
 
 **Current Version:** VER 4.0 (Peer-Review Edition)  
