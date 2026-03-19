@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #020617; /* 更深的深渊背景 */
+            background-color: #020617; 
             color: #f8fafc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -20,7 +20,7 @@
         }
         #header {
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             background-color: rgba(15, 23, 42, 0.9);
             width: 100%;
             box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.8);
@@ -41,7 +41,7 @@
             position: absolute;
             bottom: 0;
             z-index: 20;
-            background: linear-gradient(to top, #020617 60%, transparent);
+            background: linear-gradient(to top, #020617 65%, transparent);
         }
         .slider-container {
             display: flex;
@@ -52,7 +52,7 @@
             border-radius: 12px;
             border: 1px solid #38bdf8;
             width: 350px;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
             backdrop-filter: blur(10px);
         }
         input[type=range] { width: 100%; cursor: pointer; margin-top: 8px; accent-color: #38bdf8; }
@@ -63,11 +63,11 @@
             gap: 15px;
             width: 90%;
             max-width: 1200px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .metric-box {
             background: rgba(30, 41, 59, 0.7);
-            padding: 10px;
+            padding: 8px 10px;
             border-radius: 8px;
             border: 1px solid rgba(51, 65, 85, 0.8);
             text-align: center;
@@ -77,7 +77,6 @@
         .metric-value { font-size: 18px; font-weight: bold; text-shadow: 0 0 8px currentColor; }
         .metric-status { font-size: 11px; margin-top: 5px; }
         
-        /* 颜色定义 */
         .c-red { color: #f87171; }
         .c-blue { color: #60a5fa; }
         .c-yellow { color: #fbbf24; }
@@ -93,10 +92,9 @@
             z-index: 1;
         }
 
-        /* 浮动显示核心理论参数 */
         #theory-overlay {
             position: absolute;
-            top: 80px;
+            top: 75px;
             left: 20px;
             z-index: 15;
             pointer-events: none;
@@ -104,16 +102,18 @@
             font-family: 'Courier New', Courier, monospace;
         }
         .hud-item {
-            margin-bottom: 15px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 10px;
             border-left: 3px solid #38bdf8;
             border-radius: 0 4px 4px 0;
-            font-size: 12px;
+            font-size: 11px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            backdrop-filter: blur(3px);
+            transition: all 0.3s;
         }
         .math-sym { color: #38bdf8; font-weight: bold; }
 
-        /* 新增：专属作者署名样式 */
         #author-signature {
             position: absolute;
             bottom: 25px;
@@ -121,47 +121,79 @@
             z-index: 50;
             color: rgba(148, 163, 184, 0.6);
             font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
+            font-size: 11px;
             pointer-events: none;
             text-align: right;
-            line-height: 1.6;
+            line-height: 1.5;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         #author-signature .author-name {
             color: #38bdf8;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
             letter-spacing: 2px;
             text-transform: uppercase;
+        }
+
+        /* 概率密度轴提示 */
+        #pdf-label {
+            position: absolute;
+            top: 50%;
+            right: 80px;
+            transform: translateY(-50%) rotate(90deg);
+            color: rgba(251, 191, 36, 0.5);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            letter-spacing: 4px;
+            pointer-events: none;
+            z-index: 15;
         }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <h1>Consciousness Weaving Theory : Genesis Engine</h1>
-        <p class="subtitle">Simulating Non-commutative Spacetime & Information Geodesics | <b>Author: Jack Liu</b></p>
+        <h1>Consciousness Weaving Theory : Singularity Engine</h1>
+        <p class="subtitle">Ultimate Integration of Information Geometry, Tensor Fields & Wave Function Collapse | <b>Author: Jack Liu</b></p>
     </div>
 
-    <!-- 理论级 HUD 面板 (新增底层几何参数实时演算) -->
+    <!-- 理论级 HUD 面板 (已增补所有 7 大底层核算公式) -->
     <div id="theory-overlay">
-        <div class="hud-item">
+        <div class="hud-item" style="border-left-color: #fbbf24;">
+            [Eq 2.2] Covariant Weaving Action<br>
+            <span class="math-sym">𝒜_W[Ψ, g, λ] = </span> <span id="hud-action" style="color:#fbbf24">Maximum Quanta</span>
+        </div>
+        <div class="hud-item" style="border-left-color: #34d399;">
+            [Eq 2.1] Non-linear Weaving Tensor<br>
+            <span class="math-sym">W_μν (Operator) = </span> <span id="hud-tensor" style="color:#34d399">Isotropic Noise</span>
+        </div>
+        <div class="hud-item" style="border-left-color: #f87171;">
             [Eq 3.1] Non-commutative Metric Noise <br>
             <span class="math-sym">[x̂μ, x̂ν] = </span> <span id="hud-noise" style="color:#f87171">∞ (Algebraic Chaos)</span>
         </div>
-        <div class="hud-item">
-            [Eq 4] Bures Information Geodesic Distance <br>
-            <span class="math-sym">Db(ρ, σ) = </span> <span id="hud-bures" style="color:#fbbf24">1.570 rad</span>
+        <div class="hud-item" style="border-left-color: #c084fc;">
+            [Eq 3.3] Holographic Entanglement Entropy <br>
+            <span class="math-sym">S_EE(ρ) - γ = </span> <span id="hud-entropy" style="color:#c084fc">Unbounded Space</span>
         </div>
-        <div class="hud-item">
-            [Eq 5] Biological Variational Free Energy <br>
-            <span class="math-sym">ℱ_bio(λ) = </span> <span id="hud-fe" style="color:#60a5fa">Maximum (High Entropy)</span>
+        <div class="hud-item" style="border-left-color: #60a5fa;">
+            [Eq 3.4] Cosmological Time Evolution <br>
+            <span class="math-sym">iℏ ∂/∂τ |Ψ⟩ = </span> <span id="hud-time" style="color:#60a5fa">Static (Timeless)</span>
+        </div>
+        <div class="hud-item" style="border-left-color: #f472b6;">
+            [Eq 4.x] Bures Information Geodesic<br>
+            <span class="math-sym">Db(ρ, σ) = </span> <span id="hud-bures" style="color:#f472b6">1.570 rad</span>
+        </div>
+        <!-- 终极补全：费舍尔信息度规 -->
+        <div class="hud-item" style="border-left-color: #e879f9;">
+            [Eq 6.x] Fisher Information Metric (Certainty)<br>
+            <span class="math-sym">I_F(λ) ∝ 1/σ² = </span> <span id="hud-fisher" style="color:#e879f9">0.000 (Absolute Uncertainty)</span>
         </div>
     </div>
 
+    <div id="pdf-label">PROBABILITY DENSITY P(x)</div>
     <canvas id="simCanvas"></canvas>
 
-    <!-- 新增：右下角作者专属发光水印 -->
     <div id="author-signature">
         Theoretical Framework & Simulation<br>
         by <span class="author-name">Jack Liu</span>
@@ -212,9 +244,13 @@
         const vEn = document.getElementById('enValue'), sEn = document.getElementById('enStatus');
         
         // HUD DOM
+        const hAction = document.getElementById('hud-action');
+        const hTensor = document.getElementById('hud-tensor');
         const hNoise = document.getElementById('hud-noise');
+        const hEntropy = document.getElementById('hud-entropy');
+        const hTime = document.getElementById('hud-time');
         const hBures = document.getElementById('hud-bures');
-        const hFe = document.getElementById('hud-fe');
+        const hFisher = document.getElementById('hud-fisher');
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -226,28 +262,42 @@
         const F_Q = 1.5, W_scale = 4.2, En_scale = 3.5;
         const numWavesPerSystem = 10;
         let sysA = [], sysB = [];
+        let particles = [];
         
+        // 初始化量子粒子云（表示概率密度）
+        for(let i=0; i<150; i++) {
+            particles.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                baseY: Math.random() * window.innerHeight, // 原始随机位置
+                speed: 0.5 + Math.random() * 2,
+                angle: Math.random() * Math.PI * 2
+            });
+        }
+
         for (let i = 0; i < numWavesPerSystem; i++) {
             sysA.push({ amp: 20 + Math.random() * 40, freq: 0.01 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2, yOff: -80 - Math.random() * 50, speed: 0.02 + Math.random() * 0.04 });
             sysB.push({ amp: 20 + Math.random() * 40, freq: 0.01 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2, yOff: 80 + Math.random() * 50, speed: 0.02 + Math.random() * 0.04 });
         }
 
         let timePhase = 0;
+        let cosmicClock = 0;
 
         function draw() {
-            // 背景不再是纯黑，加入一点透明度形成拖影动感
-            ctx.fillStyle = 'rgba(2, 6, 23, 0.4)';
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.45)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             let lambda = parseFloat(lambdaSlider.value);
             timePhase += 0.03;
+            cosmicClock += lambda * 0.05; 
             
+            let midY = canvas.height * 0.45; 
+
             // ==========================================
-            // 0. 更新 DOM 数据
+            // 0. 更新 DOM 数据与公式
             // ==========================================
             valL.textContent = lambda.toFixed(2);
             
-            // Bottom Macroscopic Metrics
             let k3 = 1.0 + (lambda * F_Q);
             vK3.textContent = k3.toFixed(3);
             sK3.textContent = k3 > 1.0 ? "Quantum Interference!" : "Classical Realism";
@@ -267,74 +317,161 @@
             sEn.textContent = en > 0.1 ? "Macroscopic Entanglement" : "Separable State";
             sEn.style.color = en > 0.1 ? "#c084fc" : "#94a3b8";
 
-            // HUD Theory Metrics (新增)
-            // 几何代数噪音 (1 - lambda)
+            // HUD
+            let actionVal = 1000 * Math.exp(-lambda * 4.5);
+            hAction.textContent = lambda < 0.05 ? "Maximum Quanta (Chaotic)" : actionVal.toFixed(1) + " (Action Minimized)";
+            hAction.style.color = lambda < 0.05 ? "#f87171" : "#fbbf24";
+
+            hTensor.textContent = lambda === 0 ? "Isotropic Zero-Field" : "Directed Geodesic Flow (" + lambda.toFixed(2) + ")";
+            hTensor.style.color = lambda === 0 ? "#94a3b8" : "#34d399";
+
             let noiseIntensity = 1.0 - lambda;
-            if(lambda === 0) { hNoise.textContent = "∞ (Algebraic Chaos)"; hNoise.style.color = "#f87171"; }
-            else { hNoise.textContent = noiseIntensity.toFixed(4) + " (Metric Anchored)"; hNoise.style.color = "#34d399"; }
+            hNoise.textContent = lambda === 0 ? "∞ (Algebraic Chaos)" : noiseIntensity.toFixed(4) + " (Metric Anchored)";
+            hNoise.style.color = lambda === 0 ? "#f87171" : "#34d399";
             
-            // 布雷斯距离 Db
+            let entropyVal = 10.0 * Math.exp(-lambda * 3);
+            hEntropy.textContent = lambda < 0.05 ? "Unbounded Space (Max S_EE)" : entropyVal.toFixed(3) + " (Space Folded)";
+            hEntropy.style.color = lambda < 0.05 ? "#f87171" : "#c084fc";
+
+            hTime.textContent = lambda === 0 ? "Static (Timeless Vacuum)" : "Flowing (dτ = " + (lambda).toFixed(2) + "dt)";
+            hTime.style.color = lambda === 0 ? "#f87171" : "#60a5fa";
+
             let buresDist = (Math.PI / 2) * (1 - lambda);
             hBures.textContent = buresDist.toFixed(4) + " rad";
-            if(buresDist < 0.1) hBures.style.color = "#34d399"; else hBures.style.color = "#fbbf24";
+            hBures.style.color = buresDist < 0.1 ? "#34d399" : "#f472b6";
 
-            // 生物自由能 F
-            let freeEnergy = 100 * Math.exp(-lambda * 5); // 指数衰减
-            if(lambda < 0.1) { hFe.textContent = "Max Entropy (Decay)"; hFe.style.color = "#f87171"; }
-            else { hFe.textContent = freeEnergy.toFixed(2) + " J (Order Emergence)"; hFe.style.color = "#38bdf8"; }
+            // 新增：费舍尔信息度规与方差
+            // 概率波的离散程度（高斯分布的标准差 sigma）
+            let sigma = 200 * (1 - lambda) + 2; // λ=0时sigma=200(极宽)，λ=1时sigma=2(狄拉克δ函数极窄)
+            let fisherInfo = 1.0 / (sigma * sigma);
+            
+            if(lambda === 0) { hFisher.textContent = "0.0000 (Superposition Spread)"; hFisher.style.color = "#94a3b8"; }
+            else if (lambda > 0.95) { hFisher.textContent = "∞ (Dirac Delta Certainty)"; hFisher.style.color = "#e879f9"; }
+            else { hFisher.textContent = (fisherInfo * 10000).toFixed(4) + " (Information Gain)"; hFisher.style.color = "#e879f9"; }
+
 
             // ==========================================
-            // 1. 绘制底层非交换时空网格 (Spacetime Foam)
+            // 1. 绘制时空泡沫 (Spacetime Foam)
             // ==========================================
             ctx.lineWidth = 1;
             let gridSize = 60;
-            // 网格的混沌程度完全由 (1-lambda) 决定
             let warpFactor = (1 - lambda) * 50; 
             
             ctx.beginPath();
             for(let x = 0; x <= canvas.width; x += gridSize) {
                 for(let y = 0; y <= canvas.height; y += gridSize) {
-                    // 利用正弦和时间函数制造沸腾的量子泡沫感
                     let dx = Math.sin(y * 0.05 + timePhase) * warpFactor;
                     let dy = Math.cos(x * 0.05 + timePhase) * warpFactor;
-                    
-                    let px = x + dx;
-                    let py = y + dy;
+                    let px = x + dx; let py = y + dy;
 
-                    // 绘制水平线段
                     if(x < canvas.width) {
                         let nx = x + gridSize;
                         let ndx = Math.sin(y * 0.05 + timePhase) * warpFactor;
-                        ctx.moveTo(px, py);
-                        ctx.lineTo(nx + ndx, py); // 简化连线
+                        ctx.moveTo(px, py); ctx.lineTo(nx + ndx, py);
                     }
-                    // 绘制垂直线段
                     if(y < canvas.height) {
                         let ny = y + gridSize;
                         let ndy = Math.cos(x * 0.05 + timePhase) * warpFactor;
-                        ctx.moveTo(px, py);
-                        ctx.lineTo(px, ny + ndy);
+                        ctx.moveTo(px, py); ctx.lineTo(px, ny + ndy);
                     }
                 }
             }
-            // 网格颜色：从混沌的暗红变成有序的深蓝
-            let gridR = Math.floor(100 * (1-lambda) + 30 * lambda);
-            let gridG = Math.floor(30 * (1-lambda) + 41 * lambda);
-            let gridB = Math.floor(40 * (1-lambda) + 59 * lambda);
-            ctx.strokeStyle = `rgba(${gridR}, ${gridG}, ${gridB}, 0.3)`;
+            ctx.strokeStyle = `rgba(${100*(1-lambda)+30*lambda}, ${30*(1-lambda)+41*lambda}, ${40*(1-lambda)+59*lambda}, 0.15)`;
             ctx.stroke();
 
             // ==========================================
-            // 2. 绘制波函数与拓扑纠缠 (Information Geodesic)
+            // 2. 编织张量场 (Tensor Field W_μν)
             // ==========================================
-            let midY = canvas.height * 0.45; // 中心蓝图线位置
+            let tensorSpacing = 80;
+            ctx.beginPath();
+            for(let x = tensorSpacing/2; x < canvas.width; x += tensorSpacing) {
+                for(let y = tensorSpacing/2; y < canvas.height; y += tensorSpacing) {
+                    let angleChaos = Math.sin(x*0.01 + y*0.02 + timePhase) * Math.PI * 2;
+                    let targetAngle = Math.atan2(midY - y, 0); 
+                    let currentAngle = angleChaos * (1 - lambda) + targetAngle * lambda;
+                    let vectorLength = 10 + lambda * 15;
+                    let vx = Math.cos(currentAngle) * vectorLength;
+                    let vy = Math.sin(currentAngle) * vectorLength;
+                    
+                    ctx.moveTo(x, y); ctx.lineTo(x + vx, y + vy);
+                    ctx.lineTo(x + vx - Math.cos(currentAngle - Math.PI/6)*4, y + vy - Math.sin(currentAngle - Math.PI/6)*4);
+                    ctx.moveTo(x + vx, y + vy);
+                    ctx.lineTo(x + vx - Math.cos(currentAngle + Math.PI/6)*4, y + vy - Math.sin(currentAngle + Math.PI/6)*4);
+                }
+            }
+            ctx.strokeStyle = `rgba(52, 211, 153, ${0.08 + lambda * 0.25})`; 
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // ==========================================
+            // 3. 终极视觉新增：全局概率密度曲线 (PDF Curve) - 玻恩定则的坍缩
+            // ==========================================
+            // 在屏幕右侧绘制一个反映量子概率分布的高斯曲线 (钟形曲线 -> 狄拉克 Delta)
+            ctx.beginPath();
+            let maxCurveWidth = 300; // 概率曲线的最大宽度
+            for(let y = 0; y < canvas.height; y+=5) {
+                // 计算高斯函数： P(y) = e^(- (y-μ)² / (2σ²))
+                let probDensity = Math.exp(-Math.pow(y - midY, 2) / (2 * sigma * sigma));
+                let drawX = canvas.width - probDensity * maxCurveWidth;
+                
+                if(y === 0) ctx.moveTo(drawX, y);
+                else ctx.lineTo(drawX, y);
+            }
+            ctx.strokeStyle = `rgba(251, 191, 36, ${0.4 + lambda*0.6})`; // Golden curve
+            ctx.lineWidth = 2 + lambda*2;
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 15;
+            ctx.stroke();
             
-            // Blueprint Line (The Geodesic Target)
+            // 填充概率曲线内部
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(canvas.width, 0);
+            ctx.fillStyle = `rgba(251, 191, 36, ${0.05 + lambda*0.15})`;
+            ctx.fill();
+            ctx.shadowBlur = 0; // 重置阴影
+
+            // ==========================================
+            // 4. 终极视觉新增：概率云粒子群 (Probability Cloud Swarm)
+            // ==========================================
+            ctx.fillStyle = `rgba(226, 232, 240, ${0.3 + lambda*0.5})`;
+            particles.forEach(p => {
+                p.x -= p.speed;
+                if(p.x < 0) p.x = canvas.width;
+                
+                // 粒子的 Y 轴位置：随着 lambda 增大，所有粒子被强制吸入 PDF 曲线的高概率区（即 midY）
+                let targetY = midY + (p.baseY - midY) * (1 - lambda);
+                
+                // 加上一点量子抖动
+                let jitter = (Math.random() - 0.5) * sigma * 0.5;
+                let currentY = targetY + jitter;
+
+                ctx.beginPath();
+                ctx.arc(p.x, currentY, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // ==========================================
+            // 5. 蓝图、波函数与拓扑纠缠 (Wave & Entanglement)
+            // ==========================================
+            let bandHeight = 40 * lambda; 
+            if(lambda > 0.05) {
+                let gradient = ctx.createLinearGradient(0, midY - bandHeight/2, 0, midY + bandHeight/2);
+                gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                gradient.addColorStop(0.5, `rgba(56, 189, 248, ${0.1 + lambda*0.2})`);
+                gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, midY - bandHeight/2, canvas.width, bandHeight);
+            }
+
             ctx.beginPath();
             ctx.moveTo(0, midY); ctx.lineTo(canvas.width, midY);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${0.2 + lambda*0.6})`;
+            ctx.strokeStyle = `rgba(56, 189, 248, ${0.3 + lambda*0.5})`;
             ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
             
+            ctx.fillStyle = `rgba(56, 189, 248, ${0.5 + lambda*0.5})`;
+            ctx.font = '12px Courier New';
+            ctx.fillText('Covariant Error-Correcting Code Space (I)', 10, midY - 12 - bandHeight/2);
+
             let pointsA = [], pointsB = [];
             let step = 20;
 
@@ -343,14 +480,14 @@
                     let w = sys[i];
                     w.phase += w.speed;
                     
-                    // Geodesic Collapse: 沿着布雷斯距离趋近蓝图
                     let cAmp = w.amp * (1 - lambda * 0.9); 
                     let cYOff = w.yOff * (1 - lambda);
                     
                     ctx.beginPath();
                     let currentPath = [];
                     for(let x=0; x<=canvas.width; x+=step) {
-                        let y = midY + cYOff + Math.sin(x*w.freq + w.phase)*cAmp;
+                        let errorJitter = (Math.random() - 0.5) * 15 * (1 - lambda);
+                        let y = midY + cYOff + Math.sin(x*w.freq + w.phase + cosmicClock)*cAmp + errorJitter;
                         if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
                         if(x % 80 === 0) currentPath.push({x, y});
                     }
@@ -370,28 +507,26 @@
                 }
             });
 
-            // 绘制系统A与B之间的“陈-西蒙斯拓扑结” (Chern-Simons Knots & Entanglement)
+            // 陈-西蒙斯拓扑结
             if(lambda > 0.05) {
                 ctx.globalCompositeOperation = 'screen';
                 ctx.beginPath();
                 for(let i=0; i<pointsA.length; i++) {
-                    // 使用贝塞尔曲线模拟“拓扑编织 (Knots)”而不是直线
-                    let cx1 = pointsA[i].x + Math.sin(timePhase * 2 + i) * 50 * lambda;
+                    let cx1 = pointsA[i].x + Math.sin(cosmicClock * 2 + i) * 50 * lambda;
                     let cy1 = midY;
-                    let cx2 = pointsB[i].x - Math.sin(timePhase * 2 + i) * 50 * lambda;
+                    let cx2 = pointsB[i].x - Math.sin(cosmicClock * 2 + i) * 50 * lambda;
                     let cy2 = midY;
                     
                     ctx.moveTo(pointsA[i].x, pointsA[i].y);
                     ctx.bezierCurveTo(cx1, cy1, cx2, cy2, pointsB[i].x, pointsB[i].y);
                 }
                 let entAlpha = Math.pow(lambda, 1.2) * 0.9;
-                ctx.strokeStyle = `rgba(192, 132, 252, ${entAlpha})`; // 耀眼的紫色纠缠
+                ctx.strokeStyle = `rgba(192, 132, 252, ${entAlpha})`; 
                 ctx.lineWidth = 2 + lambda*3;
                 ctx.shadowColor = '#c084fc';
                 ctx.shadowBlur = 15 * lambda;
                 ctx.stroke();
                 
-                // 重置阴影和混合模式
                 ctx.shadowBlur = 0;
                 ctx.globalCompositeOperation = 'source-over';
             }
