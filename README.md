@@ -1,7 +1,7 @@
 # Consciousness Weaving Theory (CWT) - Simulation Engine
 
 **Current Version:** VER 4.0 (Peer-Review Edition)  
-**Author:** Jack Liu (ORCID: 0009-0007-4733-4349)  
+**Author:** Jack Liu 
 **Affiliation:** Independent Researcher  
 **Date:** March 10, 2026  
 **License:** CC BY-NC-ND 4.0
