@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #0f172a;
+            background-color: #020617; /* 更深的深渊背景 */
             color: #f8fafc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -21,12 +21,13 @@
         #header {
             text-align: center;
             padding: 12px;
-            background-color: #1e293b;
+            background-color: rgba(15, 23, 42, 0.9);
             width: 100%;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.8);
             z-index: 10;
+            backdrop-filter: blur(5px);
         }
-        h1 { margin: 0; font-size: 22px; color: #38bdf8; }
+        h1 { margin: 0; font-size: 22px; color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
         p.subtitle { margin: 4px 0 0 0; font-size: 13px; color: #94a3b8; }
         
         #controls {
@@ -36,19 +37,25 @@
             gap: 15px;
             padding: 15px;
             width: 100%;
-            background-color: #0f172a;
+            background-color: transparent;
+            position: absolute;
+            bottom: 0;
+            z-index: 20;
+            background: linear-gradient(to top, #020617 60%, transparent);
         }
         .slider-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: #1e293b;
+            background: rgba(30, 41, 59, 0.8);
             padding: 10px 30px;
             border-radius: 12px;
-            border: 1px solid #334155;
-            width: 320px;
+            border: 1px solid #38bdf8;
+            width: 350px;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+            backdrop-filter: blur(10px);
         }
-        input[type=range] { width: 100%; cursor: pointer; margin-top: 8px; }
+        input[type=range] { width: 100%; cursor: pointer; margin-top: 8px; accent-color: #38bdf8; }
         
         #metrics-grid {
             display: grid;
@@ -56,17 +63,18 @@
             gap: 15px;
             width: 90%;
             max-width: 1200px;
+            margin-bottom: 20px;
         }
         .metric-box {
-            background: #1e293b;
+            background: rgba(30, 41, 59, 0.7);
             padding: 10px;
             border-radius: 8px;
-            border: 1px solid #334155;
+            border: 1px solid rgba(51, 65, 85, 0.8);
             text-align: center;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
         }
-        .metric-title { font-size: 12px; color: #cbd5e1; margin-bottom: 5px; }
-        .metric-value { font-size: 18px; font-weight: bold; }
+        .metric-title { font-size: 11px; color: #cbd5e1; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .metric-value { font-size: 18px; font-weight: bold; text-shadow: 0 0 8px currentColor; }
         .metric-status { font-size: 11px; margin-top: 5px; }
         
         /* 颜色定义 */
@@ -77,53 +85,119 @@
 
         canvas {
             display: block;
-            background-color: #020617;
-            border-top: 1px solid #334155;
-            flex-grow: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* 浮动显示核心理论参数 */
+        #theory-overlay {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            z-index: 15;
+            pointer-events: none;
+            color: #f8fafc;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .hud-item {
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border-left: 3px solid #38bdf8;
+            border-radius: 0 4px 4px 0;
+            font-size: 12px;
+        }
+        .math-sym { color: #38bdf8; font-weight: bold; }
+
+        /* 新增：专属作者署名样式 */
+        #author-signature {
+            position: absolute;
+            bottom: 25px;
+            right: 30px;
+            z-index: 50;
+            color: rgba(148, 163, 184, 0.6);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            pointer-events: none;
+            text-align: right;
+            line-height: 1.6;
+        }
+        #author-signature .author-name {
+            color: #38bdf8;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <h1>Consciousness Weaving Theory (CWT) Simulator : Ultimate</h1>
-        <p class="subtitle">Complete 4-Parameter Dynamics & Macroscopic Limit Violations</p>
+        <h1>Consciousness Weaving Theory : Genesis Engine</h1>
+        <p class="subtitle">Simulating Non-commutative Spacetime & Information Geodesics | <b>Author: Jack Liu</b></p>
     </div>
 
-    <div id="controls">
-        <div class="slider-container">
-            <label for="lambdaSlider" style="font-size: 15px;">
-                Intention Intensity (λ): <span id="lambdaValue" style="color:#38bdf8; font-weight:bold; font-size:18px;">0.00</span>
-            </label>
-            <input type="range" id="lambdaSlider" min="0" max="1" step="0.01" value="0">
+    <!-- 理论级 HUD 面板 (新增底层几何参数实时演算) -->
+    <div id="theory-overlay">
+        <div class="hud-item">
+            [Eq 3.1] Non-commutative Metric Noise <br>
+            <span class="math-sym">[x̂μ, x̂ν] = </span> <span id="hud-noise" style="color:#f87171">∞ (Algebraic Chaos)</span>
         </div>
-
-        <div id="metrics-grid">
-            <div class="metric-box">
-                <div class="metric-title">1. LGI Violation (K3)</div>
-                <div id="k3Value" class="metric-value c-red">1.000</div>
-                <div id="k3Status" class="metric-status" style="color:#94a3b8;">Classical Realism</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-title">2. Time Variance (Δt²)</div>
-                <div id="dtValue" class="metric-value c-blue">∞</div>
-                <div id="dtStatus" class="metric-status" style="color:#94a3b8;">Chronostasis</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-title">3. Jarzynski Work (ΔW)</div>
-                <div id="dwValue" class="metric-value c-yellow">0.000 J</div>
-                <div id="dwStatus" class="metric-status" style="color:#94a3b8;">Thermodynamic Eq.</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-title">4. Entanglement (E_N)</div>
-                <div id="enValue" class="metric-value c-purple">0.000</div>
-                <div id="enStatus" class="metric-status" style="color:#94a3b8;">Separable State</div>
-            </div>
+        <div class="hud-item">
+            [Eq 4] Bures Information Geodesic Distance <br>
+            <span class="math-sym">Db(ρ, σ) = </span> <span id="hud-bures" style="color:#fbbf24">1.570 rad</span>
+        </div>
+        <div class="hud-item">
+            [Eq 5] Biological Variational Free Energy <br>
+            <span class="math-sym">ℱ_bio(λ) = </span> <span id="hud-fe" style="color:#60a5fa">Maximum (High Entropy)</span>
         </div>
     </div>
 
     <canvas id="simCanvas"></canvas>
+
+    <!-- 新增：右下角作者专属发光水印 -->
+    <div id="author-signature">
+        Theoretical Framework & Simulation<br>
+        by <span class="author-name">Jack Liu</span>
+    </div>
+
+    <div id="controls">
+        <div id="metrics-grid">
+            <div class="metric-box">
+                <div class="metric-title">Macroscopic LGI (K3)</div>
+                <div id="k3Value" class="metric-value c-red">1.000</div>
+                <div id="k3Status" class="metric-status" style="color:#94a3b8;">Classical Realism</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Time Variance (Δt²)</div>
+                <div id="dtValue" class="metric-value c-blue">∞</div>
+                <div id="dtStatus" class="metric-status" style="color:#94a3b8;">Chronostasis</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Jarzynski Work (ΔW)</div>
+                <div id="dwValue" class="metric-value c-yellow">0.000 J</div>
+                <div id="dwStatus" class="metric-status" style="color:#94a3b8;">Thermodynamic Eq.</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Entanglement (E_N)</div>
+                <div id="enValue" class="metric-value c-purple">0.000</div>
+                <div id="enStatus" class="metric-status" style="color:#94a3b8;">Separable State</div>
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <label for="lambdaSlider" style="font-size: 15px; color: #f8fafc; text-transform: uppercase; letter-spacing: 2px;">
+                Intention Operator (λ) = <span id="lambdaValue" style="color:#38bdf8; font-weight:bold; font-size:20px;">0.00</span>
+            </label>
+            <input type="range" id="lambdaSlider" min="0" max="1" step="0.005" value="0">
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('simCanvas');
@@ -136,121 +210,159 @@
         const vDt = document.getElementById('dtValue'), sDt = document.getElementById('dtStatus');
         const vDw = document.getElementById('dwValue'), sDw = document.getElementById('dwStatus');
         const vEn = document.getElementById('enValue'), sEn = document.getElementById('enStatus');
+        
+        // HUD DOM
+        const hNoise = document.getElementById('hud-noise');
+        const hBures = document.getElementById('hud-bures');
+        const hFe = document.getElementById('hud-fe');
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - document.getElementById('header').offsetHeight - document.getElementById('controls').offsetHeight;
+            canvas.height = window.innerHeight;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // 物理常数 (用于视觉模拟)
-        const F_Q = 1.5; 
-        const W_scale = 4.2;
-        const En_scale = 3.5;
-
-        // 初始化两组独立的波函数 (System A & System B)
-        const numWavesPerSystem = 12;
+        const F_Q = 1.5, W_scale = 4.2, En_scale = 3.5;
+        const numWavesPerSystem = 10;
         let sysA = [], sysB = [];
         
         for (let i = 0; i < numWavesPerSystem; i++) {
-            sysA.push({
-                amp: 15 + Math.random() * 30,
-                freq: 0.01 + Math.random() * 0.02,
-                phase: Math.random() * Math.PI * 2,
-                yOff: -50 - Math.random() * 40, // A在上方
-                speed: 0.02 + Math.random() * 0.04
-            });
-            sysB.push({
-                amp: 15 + Math.random() * 30,
-                freq: 0.01 + Math.random() * 0.02,
-                phase: Math.random() * Math.PI * 2,
-                yOff: 50 + Math.random() * 40, // B在下方
-                speed: 0.02 + Math.random() * 0.04
-            });
+            sysA.push({ amp: 20 + Math.random() * 40, freq: 0.01 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2, yOff: -80 - Math.random() * 50, speed: 0.02 + Math.random() * 0.04 });
+            sysB.push({ amp: 20 + Math.random() * 40, freq: 0.01 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2, yOff: 80 + Math.random() * 50, speed: 0.02 + Math.random() * 0.04 });
         }
 
+        let timePhase = 0;
+
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 背景不再是纯黑，加入一点透明度形成拖影动感
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.4)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             let lambda = parseFloat(lambdaSlider.value);
+            timePhase += 0.03;
+            
+            // ==========================================
+            // 0. 更新 DOM 数据
+            // ==========================================
             valL.textContent = lambda.toFixed(2);
             
-            // ==========================================
-            // 1. 数据逻辑与 DOM 更新
-            // ==========================================
-            
-            // K3
+            // Bottom Macroscopic Metrics
             let k3 = 1.0 + (lambda * F_Q);
             vK3.textContent = k3.toFixed(3);
-            if(k3 > 1.0) { sK3.textContent = "Quantum Interference!"; sK3.style.color = "#f87171"; } 
-            else { sK3.textContent = "Classical Realism"; sK3.style.color = "#94a3b8"; }
+            sK3.textContent = k3 > 1.0 ? "Quantum Interference!" : "Classical Realism";
+            sK3.style.color = k3 > 1.0 ? "#f87171" : "#94a3b8";
 
-            // dt^2
             let dt2 = lambda === 0 ? Infinity : 1.0 / (lambda * F_Q);
             vDt.textContent = lambda === 0 ? "∞" : dt2.toFixed(3);
-            if(lambda > 0.1) { sDt.textContent = "Metric Time Flow"; sDt.style.color = "#60a5fa"; }
-            else { sDt.textContent = "Chronostasis (Jitter)"; sDt.style.color = "#94a3b8"; }
+            sDt.textContent = lambda > 0.1 ? "Metric Time Flow" : "Chronostasis (Jitter)";
+            sDt.style.color = lambda > 0.1 ? "#60a5fa" : "#94a3b8";
 
-            // Delta W (Jarzynski)
-            let dw = lambda * W_scale;
-            vDw.textContent = dw.toFixed(3) + " J";
-            if(dw > 0) { sDw.textContent = "Informational Work Done"; sDw.style.color = "#fbbf24"; }
-            else { sDw.textContent = "Thermodynamic Eq."; sDw.style.color = "#94a3b8"; }
+            vDw.textContent = (lambda * W_scale).toFixed(3) + " J";
+            sDw.textContent = lambda > 0 ? "Informational Work Done" : "Thermodynamic Eq.";
+            sDw.style.color = lambda > 0 ? "#fbbf24" : "#94a3b8";
 
-            // Entanglement E_N (Logarithmic Negativity)
-            let en = Math.pow(lambda, 2) * En_scale; // 非线性增长
+            let en = Math.pow(lambda, 2) * En_scale;
             vEn.textContent = en.toFixed(3);
-            if(en > 0.1) { sEn.textContent = "Macroscopic Entanglement"; sEn.style.color = "#c084fc"; }
-            else { sEn.textContent = "Separable State"; sEn.style.color = "#94a3b8"; }
+            sEn.textContent = en > 0.1 ? "Macroscopic Entanglement" : "Separable State";
+            sEn.style.color = en > 0.1 ? "#c084fc" : "#94a3b8";
 
-
-            // ==========================================
-            // 2. 绘制上半区：波函数与纠缠模拟
-            // ==========================================
-            let topH = canvas.height * 0.55;
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(0, 0, canvas.width, topH);
+            // HUD Theory Metrics (新增)
+            // 几何代数噪音 (1 - lambda)
+            let noiseIntensity = 1.0 - lambda;
+            if(lambda === 0) { hNoise.textContent = "∞ (Algebraic Chaos)"; hNoise.style.color = "#f87171"; }
+            else { hNoise.textContent = noiseIntensity.toFixed(4) + " (Metric Anchored)"; hNoise.style.color = "#34d399"; }
             
-            // Blueprint Line
+            // 布雷斯距离 Db
+            let buresDist = (Math.PI / 2) * (1 - lambda);
+            hBures.textContent = buresDist.toFixed(4) + " rad";
+            if(buresDist < 0.1) hBures.style.color = "#34d399"; else hBures.style.color = "#fbbf24";
+
+            // 生物自由能 F
+            let freeEnergy = 100 * Math.exp(-lambda * 5); // 指数衰减
+            if(lambda < 0.1) { hFe.textContent = "Max Entropy (Decay)"; hFe.style.color = "#f87171"; }
+            else { hFe.textContent = freeEnergy.toFixed(2) + " J (Order Emergence)"; hFe.style.color = "#38bdf8"; }
+
+            // ==========================================
+            // 1. 绘制底层非交换时空网格 (Spacetime Foam)
+            // ==========================================
+            ctx.lineWidth = 1;
+            let gridSize = 60;
+            // 网格的混沌程度完全由 (1-lambda) 决定
+            let warpFactor = (1 - lambda) * 50; 
+            
             ctx.beginPath();
-            ctx.moveTo(0, topH/2); ctx.lineTo(canvas.width, topH/2);
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-            ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = 'rgba(56, 189, 248, 0.6)'; ctx.font = '12px sans-serif';
-            ctx.fillText('Universal Blueprint (I)', 10, topH/2 - 8);
+            for(let x = 0; x <= canvas.width; x += gridSize) {
+                for(let y = 0; y <= canvas.height; y += gridSize) {
+                    // 利用正弦和时间函数制造沸腾的量子泡沫感
+                    let dx = Math.sin(y * 0.05 + timePhase) * warpFactor;
+                    let dy = Math.cos(x * 0.05 + timePhase) * warpFactor;
+                    
+                    let px = x + dx;
+                    let py = y + dy;
 
-            // 绘制波并收集路径点用于绘制纠缠
+                    // 绘制水平线段
+                    if(x < canvas.width) {
+                        let nx = x + gridSize;
+                        let ndx = Math.sin(y * 0.05 + timePhase) * warpFactor;
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(nx + ndx, py); // 简化连线
+                    }
+                    // 绘制垂直线段
+                    if(y < canvas.height) {
+                        let ny = y + gridSize;
+                        let ndy = Math.cos(x * 0.05 + timePhase) * warpFactor;
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(px, ny + ndy);
+                    }
+                }
+            }
+            // 网格颜色：从混沌的暗红变成有序的深蓝
+            let gridR = Math.floor(100 * (1-lambda) + 30 * lambda);
+            let gridG = Math.floor(30 * (1-lambda) + 41 * lambda);
+            let gridB = Math.floor(40 * (1-lambda) + 59 * lambda);
+            ctx.strokeStyle = `rgba(${gridR}, ${gridG}, ${gridB}, 0.3)`;
+            ctx.stroke();
+
+            // ==========================================
+            // 2. 绘制波函数与拓扑纠缠 (Information Geodesic)
+            // ==========================================
+            let midY = canvas.height * 0.45; // 中心蓝图线位置
+            
+            // Blueprint Line (The Geodesic Target)
+            ctx.beginPath();
+            ctx.moveTo(0, midY); ctx.lineTo(canvas.width, midY);
+            ctx.strokeStyle = `rgba(56, 189, 248, ${0.2 + lambda*0.6})`;
+            ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+            
             let pointsA = [], pointsB = [];
-            let step = 15; // 采样步长
+            let step = 20;
 
-            // 处理 System A & B
             [sysA, sysB].forEach((sys, sysIdx) => {
                 for(let i=0; i<sys.length; i++) {
                     let w = sys[i];
                     w.phase += w.speed;
                     
-                    // 坍缩逻辑：随着 lambda 增大，振幅减小，偏移量归零
-                    let cAmp = w.amp * (1 - lambda * 0.85);
+                    // Geodesic Collapse: 沿着布雷斯距离趋近蓝图
+                    let cAmp = w.amp * (1 - lambda * 0.9); 
                     let cYOff = w.yOff * (1 - lambda);
                     
                     ctx.beginPath();
                     let currentPath = [];
                     for(let x=0; x<=canvas.width; x+=step) {
-                        let y = topH/2 + cYOff + Math.sin(x*w.freq + w.phase)*cAmp;
+                        let y = midY + cYOff + Math.sin(x*w.freq + w.phase)*cAmp;
                         if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                        if(x % 60 === 0) currentPath.push({x, y}); // 采样点
+                        if(x % 80 === 0) currentPath.push({x, y});
                     }
                     
-                    // 颜色根据不同系统区分，且随 lambda 发亮
                     let r,g,b;
-                    if(sysIdx === 0) { r = 100-lambda*50; g = 100+lambda*100; b = 250; } // 偏蓝
-                    else { r = 250; g = 100+lambda*50; b = 100-lambda*50; } // 偏红
+                    if(sysIdx === 0) { r = 100-lambda*50; g = 100+lambda*100; b = 250; } 
+                    else { r = 250; g = 100+lambda*50; b = 100-lambda*50; } 
                     
-                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 + lambda*0.4})`;
-                    ctx.lineWidth = 1 + lambda;
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.2 + lambda*0.5})`;
+                    ctx.lineWidth = 1.5 + lambda * 2;
                     ctx.stroke();
 
-                    // 保存中心路径点用于后续连线
                     if(i === 0) {
                         if(sysIdx === 0) pointsA = currentPath;
                         else pointsB = currentPath;
@@ -258,103 +370,31 @@
                 }
             });
 
-            // 绘制系统A与B之间的“纠缠键” (Macroscopic Logarithmic Negativity)
-            if(lambda > 0) {
+            // 绘制系统A与B之间的“陈-西蒙斯拓扑结” (Chern-Simons Knots & Entanglement)
+            if(lambda > 0.05) {
                 ctx.globalCompositeOperation = 'screen';
                 ctx.beginPath();
                 for(let i=0; i<pointsA.length; i++) {
+                    // 使用贝塞尔曲线模拟“拓扑编织 (Knots)”而不是直线
+                    let cx1 = pointsA[i].x + Math.sin(timePhase * 2 + i) * 50 * lambda;
+                    let cy1 = midY;
+                    let cx2 = pointsB[i].x - Math.sin(timePhase * 2 + i) * 50 * lambda;
+                    let cy2 = midY;
+                    
                     ctx.moveTo(pointsA[i].x, pointsA[i].y);
-                    ctx.lineTo(pointsB[i].x, pointsB[i].y);
+                    ctx.bezierCurveTo(cx1, cy1, cx2, cy2, pointsB[i].x, pointsB[i].y);
                 }
-                // 纠缠线亮度随 lambda 平方增长
-                let entAlpha = Math.pow(lambda, 1.5) * 0.8;
-                ctx.strokeStyle = `rgba(192, 132, 252, ${entAlpha})`; // Purple glow
-                ctx.lineWidth = 1 + lambda*2;
+                let entAlpha = Math.pow(lambda, 1.2) * 0.9;
+                ctx.strokeStyle = `rgba(192, 132, 252, ${entAlpha})`; // 耀眼的紫色纠缠
+                ctx.lineWidth = 2 + lambda*3;
+                ctx.shadowColor = '#c084fc';
+                ctx.shadowBlur = 15 * lambda;
                 ctx.stroke();
-                ctx.globalCompositeOperation = 'source-over';
                 
-                if(lambda > 0.3) {
-                    ctx.fillStyle = `rgba(192, 132, 252, ${entAlpha})`;
-                    ctx.fillText('Entanglement Generation (E_N > 0)', canvas.width/2 - 80, topH/2 + 20);
-                }
+                // 重置阴影和混合模式
+                ctx.shadowBlur = 0;
+                ctx.globalCompositeOperation = 'source-over';
             }
-
-            // ==========================================
-            // 3. 绘制下半区：四项指标动态图表
-            // ==========================================
-            let botH = canvas.height - topH;
-            let sy = topH;
-            let midX = canvas.width / 2;
-
-            // 背景与坐标轴
-            ctx.fillStyle = '#020617'; ctx.fillRect(0, sy, canvas.width, botH);
-            ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
-            
-            // 中间分割线
-            ctx.beginPath(); ctx.moveTo(midX, sy+10); ctx.lineTo(midX, canvas.height-10); ctx.stroke();
-            
-            // 底部 X 轴
-            let pad = 40;
-            let gH = botH - 40;
-            let gY = canvas.height - 20;
-            ctx.beginPath();
-            ctx.moveTo(pad, gY); ctx.lineTo(midX - pad, gY); // 左X轴
-            ctx.moveTo(midX + pad, gY); ctx.lineTo(canvas.width - pad, gY); // 右X轴
-            ctx.stroke();
-
-            // 映射函数 (x为模拟的lambda 0~1)
-            function getPlotY(val, minV, maxV) {
-                let clamped = Math.max(minV, Math.min(val, maxV));
-                let pct = (clamped - minV) / (maxV - minV);
-                return gY - (pct * gH);
-            }
-
-            // --- 绘制左侧图表 (LGI K3 & Time dt^2) ---
-            ctx.beginPath(); ctx.strokeStyle = '#f87171'; ctx.lineWidth=2; // Red K3
-            for(let p=0; p<=1; p+=0.02) {
-                let x = pad + p * (midX - 2*pad);
-                let y = getPlotY(1.0 + p*F_Q, 0.5, 3.0);
-                if(p===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            } ctx.stroke();
-
-            ctx.beginPath(); ctx.strokeStyle = '#60a5fa'; ctx.lineWidth=2; // Blue dt2
-            for(let p=0.01; p<=1; p+=0.02) {
-                let x = pad + p * (midX - 2*pad);
-                let y = getPlotY(1.0 / (p*F_Q), 0, 10);
-                if(p===0.01) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            } ctx.stroke();
-
-            // 左侧滑块指示器
-            let indX1 = pad + lambda * (midX - 2*pad);
-            ctx.beginPath(); ctx.moveTo(indX1, sy+20); ctx.lineTo(indX1, gY);
-            ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-
-            // --- 绘制右侧图表 (Jarzynski dW & Entanglement En) ---
-            ctx.beginPath(); ctx.strokeStyle = '#fbbf24'; ctx.lineWidth=2; // Yellow dW
-            for(let p=0; p<=1; p+=0.02) {
-                let x = midX + pad + p * (canvas.width/2 - 2*pad);
-                let y = getPlotY(p * W_scale, 0, 5);
-                if(p===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            } ctx.stroke();
-
-            ctx.beginPath(); ctx.strokeStyle = '#c084fc'; ctx.lineWidth=2; // Purple En
-            for(let p=0; p<=1; p+=0.02) {
-                let x = midX + pad + p * (canvas.width/2 - 2*pad);
-                let y = getPlotY(Math.pow(p, 2) * En_scale, 0, 4);
-                if(p===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            } ctx.stroke();
-
-            // 右侧滑块指示器
-            let indX2 = midX + pad + lambda * (canvas.width/2 - 2*pad);
-            ctx.beginPath(); ctx.moveTo(indX2, sy+20); ctx.lineTo(indX2, gY);
-            ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-
-            // 图例标签
-            ctx.font = '11px sans-serif';
-            ctx.fillStyle = '#f87171'; ctx.fillText('K3 (Realism)', pad+10, sy+20);
-            ctx.fillStyle = '#60a5fa'; ctx.fillText('Δt² (Time)', pad+10, sy+35);
-            ctx.fillStyle = '#fbbf24'; ctx.fillText('ΔW (Work)', midX+pad+10, sy+20);
-            ctx.fillStyle = '#c084fc'; ctx.fillText('E_N (Entanglement)', midX+pad+10, sy+35);
 
             requestAnimationFrame(draw);
         }
